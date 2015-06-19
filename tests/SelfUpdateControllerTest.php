@@ -36,14 +36,41 @@ class SelfUpdateControllerTest extends TestCase
 
     /**
      * @param array $config controller configuration.
-     * @return SelfUpdateController
+     * @return SelfUpdateControllerMock
      */
     protected function createController($config = [])
     {
-        return new SelfUpdateController('self-update', Yii::$app, $config);
+        $controller = new SelfUpdateControllerMock('self-update', Yii::$app, $config);
+        $controller->interactive = false;
+        return $controller;
+    }
+
+    /**
+     * Emulates running of the self-update controller action.
+     * @param  string $actionID id of action to be run.
+     * @param  array  $args action arguments.
+     * @return string command output.
+     */
+    protected function runMessageControllerAction($actionID, array $args = [])
+    {
+        $controller = $this->createController();
+        $controller->run($actionID, $args);
+        return $controller->flushStdOutBuffer();
     }
 
     // Tests :
+
+    public function testActionConfig()
+    {
+        $testPath = $this->getTestFilePath();
+        $configFileName = $testPath . DIRECTORY_SEPARATOR . 'testActionConfig.php';
+
+        $this->runMessageControllerAction('config', [$configFileName]);
+
+        $this->assertFileExists($configFileName);
+        $config = require $configFileName;
+        $this->assertTrue(is_array($config));
+    }
 
     public function testWebStubs()
     {
@@ -78,5 +105,25 @@ class SelfUpdateControllerTest extends TestCase
 
         $this->assertTrue(is_link($linkPath));
         $this->assertEquals($stubPath, readlink($linkPath));
+    }
+}
+
+class SelfUpdateControllerMock extends SelfUpdateController
+{
+    /**
+     * @var string output buffer.
+     */
+    private $stdOutBuffer = '';
+
+    public function stdout($string)
+    {
+        $this->stdOutBuffer .= $string;
+    }
+
+    public function flushStdOutBuffer()
+    {
+        $result = $this->stdOutBuffer;
+        $this->stdOutBuffer = '';
+        return $result;
     }
 }

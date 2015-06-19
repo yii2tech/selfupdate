@@ -7,9 +7,9 @@
 
 namespace yii2tech\selfupdate;
 
-use yii\base\Action;
 use yii\base\Exception;
 use yii\base\InvalidConfigException;
+use yii\caching\Cache;
 use yii\console\Controller;
 use Yii;
 use yii\di\Instance;
@@ -28,6 +28,10 @@ use yii\mutex\Mutex;
  */
 class SelfUpdateController extends Controller
 {
+    /**
+     * @var string controller default action ID.
+     */
+    public $defaultAction = 'perform';
     /**
      * @var array list of email addresses, which should be used to send execution reports.
      */
@@ -63,6 +67,34 @@ class SelfUpdateController extends Controller
      */
     public $webPaths = [];
     /**
+     * @var string|array
+     */
+    public $cache;
+    /**
+     * @var array list of commands, which should be executed before project update begins.
+     * If command is a string it will be executed as shell command, otherwise as PHP callback.
+     * For example:
+     *
+     * ```php
+     * [
+     *     'mysqldump -h localhost -u root myproject > /path/to/backup/myproject.sql'
+     * ],
+     * ```
+     */
+    public $beforeUpdateCommands = [];
+    /**
+     * @var array list of shell commands, which should be executed after project update.
+     * If command is a string it will be executed as shell command, otherwise as PHP callback.
+     * For example:
+     *
+     * ```php
+     * [
+     *     'php /path/to/project/yii migrate/up --interactive=0'
+     * ],
+     * ```
+     */
+    public $afterUpdateCommands = [];
+    /**
      * @var array list of log entries.
      * @see log()
      */
@@ -79,46 +111,109 @@ class SelfUpdateController extends Controller
 
 
     /**
-     * @inheritdoc
+     * Performs project update from VCS.
+     * @param string|null $configFile the path or alias of the configuration file.
+     * You may use the "yii message/config" command to generate
+     * this file and then customize it for your needs.
+     * @throws Exception on failure
+     * @return integer CLI exit code
      */
-    public function init()
+    public function actionPerform($configFile = null)
     {
-        parent::init();
-        $this->mutex = Instance::ensure($this->mutex, Mutex::className());
-        $this->normalizeWebPaths();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function beforeAction($action)
-    {
-        $mutexName = $this->composeMutexName($action);
-        if (!$this->mutex->acquire($mutexName)) {
-            $this->stderr("Execution terminated: command is already running.\n", Console::FG_RED);
-            return false;
+        if (!empty($configFile)) {
+            $configFile = Yii::getAlias($configFile);
+            if (!is_file($configFile)) {
+                throw new Exception("The configuration file does not exist: $configFile");
+            }
+            Yii::configure($this, require $configFile);
         }
-        return parent::beforeAction($action);
+
+        if (!$this->acquireMutex()) {
+            $this->stderr("Execution terminated: command is already running.\n", Console::FG_RED);
+            return self::EXIT_CODE_ERROR;
+        }
+
+        try {
+            $this->normalizeWebPaths();
+
+            $this->linkWebStubs();
+
+            $projectRootPath = Yii::getAlias($this->projectRootPath);
+
+            $output = $this->execShellCommand('(cd ' . escapeshellarg($projectRootPath) . '; hg pull)');
+
+            if (strpos($output, 'hg update') !== false) {
+                $this->executeCommands($this->beforeUpdateCommands);
+
+                $this->execShellCommand('(cd ' . escapeshellarg($projectRootPath) . '; hg update --clean)');
+
+                $this->executeCommands($this->afterUpdateCommands);
+                $this->flushCache();
+                $this->reportSuccess();
+            }
+
+            $this->linkWebPaths();
+        } catch (\Exception $exception) {
+            $this->log($exception->getMessage());
+            $this->reportFail();
+
+            $this->releaseMutex();
+            return self::EXIT_CODE_ERROR;
+        }
+
+        $this->releaseMutex();
+        return self::EXIT_CODE_NORMAL;
     }
 
     /**
-     * @inheritdoc
+     * Creates a configuration file for the "perform" command.
+     *
+     * The generated configuration file contains detailed instructions on
+     * how to customize it to fit for your needs. After customization,
+     * you may use this configuration file with the "perform" command.
+     *
+     * @param string $filePath output file name or alias.
+     * @return integer CLI exit code
      */
-    public function afterAction($action, $result)
+    public function actionConfig($filePath)
     {
-        $mutexName = $this->composeMutexName($action);
-        $this->mutex->release($mutexName);
-        return parent::afterAction($action, $result);
+        $filePath = Yii::getAlias($filePath);
+        if (file_exists($filePath)) {
+            if (!$this->confirm("File '{$filePath}' already exists. Do you wish to overwrite it?")) {
+                return self::EXIT_CODE_NORMAL;
+            }
+        }
+        copy(Yii::getAlias('@yii2tech/selfupdate/views/selfUpdateConfig.php'), $filePath);
+        $this->stdout("Configuration file template created at '{$filePath}' . \n\n", Console::FG_GREEN);
+        return self::EXIT_CODE_NORMAL;
+    }
+
+    /**
+     * Acquires current action lock.
+     * @return boolean lock acquiring result.
+     */
+    protected function acquireMutex()
+    {
+        $this->mutex = Instance::ensure($this->mutex, Mutex::className());
+        return $this->mutex->acquire($this->composeMutexName());
+    }
+
+    /**
+     * Release current action lock.
+     * @return boolean lock release result.
+     */
+    protected function releaseMutex()
+    {
+        return $this->mutex->release($this->composeMutexName());
     }
 
     /**
      * Composes the mutex name.
-     * @param Action $action command action.
      * @return string mutex name.
      */
-    protected function composeMutexName($action)
+    protected function composeMutexName()
     {
-        return $this->className() . '::' . $action->getUniqueId();
+        return $this->className() . '::' . $this->action->getUniqueId();
     }
 
     /**
@@ -184,6 +279,20 @@ class SelfUpdateController extends Controller
     }
 
     /**
+     * Flushes cache for all components specified at [[cache]].
+     */
+    protected function flushCache()
+    {
+        if (!empty($this->cache)) {
+            foreach ((array)$this->cache as $cache) {
+                $cache = Instance::ensure($cache, Cache::className());
+                $cache->flush();
+            }
+            $this->log('Cache flushed.');
+        }
+    }
+
+    /**
      * @return string server hostname.
      */
     public function getHostName()
@@ -204,39 +313,13 @@ class SelfUpdateController extends Controller
     }
 
     /**
-     * Performs project update from VCS.
-     */
-    public function actionIndex()
-    {
-        try {
-            $this->linkWebStubs();
-
-            $projectRootPath = Yii::getAlias($this->projectRootPath);
-            $output = $this->execShellCommand('(cd ' . escapeshellarg($projectRootPath) . '; hg pull)');
-
-            if (strpos($output, 'hg update') !== false) {
-                $this->execShellCommand('(cd ' . escapeshellarg($projectRootPath) . '; hg update --clean)');
-                $this->execShellCommand('php ' . escapeshellarg($projectRootPath . '/protected/yiic') . ' migrate up --interactive=0');
-                Yii::$app->getCache()->flush();
-                $this->log('Cache flushed.');
-                $this->reportSuccess();
-            }
-
-            $this->linkWebPaths();
-        } catch (\Exception $exception) {
-            $this->log($exception->getMessage());
-            $this->reportFail();
-        }
-    }
-
-    /**
      * Logs the message
      * @param string $message log message.
      */
     protected function log($message)
     {
         $this->logLines[] = $message;
-        echo $message . "\n\n";
+        $this->stdout($message . "\n\n");
     }
 
     /**
@@ -246,8 +329,26 @@ class SelfUpdateController extends Controller
     protected function flushLog()
     {
         $logLines = $this->logLines;
-        $this->logLines = array();
+        $this->logLines = [];
         return $logLines;
+    }
+
+    /**
+     * Executes list of given commands.
+     * @param array $commands commands to be executed.
+     * @throws InvalidConfigException on invalid commands specification.
+     */
+    protected function executeCommands(array $commands)
+    {
+        foreach ($commands as $command) {
+            if (is_string($command)) {
+                $this->execShellCommand($command);
+            } elseif (is_callable($command)) {
+                $this->log(call_user_func($command));
+            } else {
+                throw new InvalidConfigException('Command should be a string or a valid PHP callback');
+            }
+        }
     }
 
     /**
