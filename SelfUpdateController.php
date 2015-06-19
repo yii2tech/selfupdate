@@ -9,9 +9,11 @@ namespace yii2tech\selfupdate;
 
 use yii\base\Action;
 use yii\base\Exception;
+use yii\base\InvalidConfigException;
 use yii\console\Controller;
 use Yii;
 use yii\di\Instance;
+use yii\helpers\Console;
 use yii\mutex\Mutex;
 
 /**
@@ -37,6 +39,30 @@ class SelfUpdateController extends Controller
      */
     public $mutex = 'mutex';
     /**
+     * @var string path to project root directory, which means VCS root directory. Path aliases can be use here.
+     */
+    public $projectRootPath = '@app';
+    /**
+     * @var array project web path stubs configuration.
+     * Each path configuration should have following keys:
+     *  - 'path' - string - path to web root folder
+     *  - 'link' - string - path for the symbolic link, which should point to the web root
+     *  - 'stub' - string - path to folder, which contains stub for the web
+     * Yii aliases can be used for all these keys.
+     * For example:
+     *
+     * ```php
+     * [
+     *     [
+     *         'path' => '@app/web',
+     *         'link' => '@app/httpdocs',
+     *         'stub' => '@app/webstub',
+     *     ]
+     * ]
+     * ```
+     */
+    public $webPaths = [];
+    /**
      * @var array list of log entries.
      * @see log()
      */
@@ -59,6 +85,7 @@ class SelfUpdateController extends Controller
     {
         parent::init();
         $this->mutex = Instance::ensure($this->mutex, Mutex::className());
+        $this->normalizeWebPaths();
     }
 
     /**
@@ -68,7 +95,7 @@ class SelfUpdateController extends Controller
     {
         $mutexName = $this->composeMutexName($action);
         if (!$this->mutex->acquire($mutexName)) {
-            $this->stderr("Execution terminated: command is already running.\n");
+            $this->stderr("Execution terminated: command is already running.\n", Console::FG_RED);
             return false;
         }
         return parent::beforeAction($action);
@@ -95,11 +122,65 @@ class SelfUpdateController extends Controller
     }
 
     /**
-     * @return string project VCS root path
+     * Links web roots to the stub directories.
+     * @see webPaths
      */
-    public function getProjectRootPath()
+    protected function linkWebStubs()
     {
-        return Yii::getAlias('@app');
+        foreach ($this->webPaths as $webPath) {
+            if (is_link($webPath['link'])) {
+                unlink($webPath['link']);
+            }
+            symlink($webPath['stub'], $webPath['link']);
+        }
+    }
+
+    /**
+     * Links web roots to the actual web directories.
+     * @see webPaths
+     */
+    protected function linkWebPaths()
+    {
+        foreach ($this->webPaths as $webPath) {
+            if (is_link($webPath['link'])) {
+                unlink($webPath['link']);
+            }
+            symlink($webPath['path'], $webPath['link']);
+        }
+    }
+
+    /**
+     * Normalizes [[webPaths]] value.
+     * @throws InvalidConfigException on invalid configuration.
+     */
+    protected function normalizeWebPaths()
+    {
+        $rawWebPaths = $this->webPaths;
+        $webPaths = [];
+        foreach ($rawWebPaths as $rawWebPath) {
+            if (!isset($rawWebPath['path'], $rawWebPath['link'], $rawWebPath['stub'])) {
+                throw new InvalidConfigException("Web path configuration should contain keys: 'path', 'link', 'stub'");
+            }
+            $webPath = [
+                'path' => Yii::getAlias($rawWebPath['path']),
+                'link' => Yii::getAlias($rawWebPath['link']),
+                'stub' => Yii::getAlias($rawWebPath['stub']),
+            ];
+            if (!is_dir($webPath['path'])) {
+                throw new InvalidConfigException("'{$webPath['path']}' ('{$rawWebPath['path']}') is not a directory.");
+            }
+            if (!is_dir($webPath['stub'])) {
+                throw new InvalidConfigException("'{$webPath['stub']}' ('{$rawWebPath['stub']}') is not a directory.");
+            }
+            if (!is_link($webPath['link'])) {
+                throw new InvalidConfigException("'{$webPath['link']}' ('{$rawWebPath['link']}') is not a symbolic link.");
+            }
+            if (!in_array(readlink($webPath['link']), [$webPath['path'], $webPath['stub']])) {
+                throw new InvalidConfigException("'{$webPath['link']}' ('{$rawWebPath['link']}') does not pointing to actual web or stub directory.");
+            }
+            $webPaths[] = $webPath;
+        }
+        $this->webPaths = $webPaths;
     }
 
     /**
@@ -107,9 +188,9 @@ class SelfUpdateController extends Controller
      */
     public function getHostName()
     {
-        @$hostName = exec('hostname');
+        $hostName = @exec('hostname');
         if (empty($hostName)) {
-            $hostName = Yii::$app->name . '.com';
+            $hostName = preg_replace('/[^a-z0-1_]/s', '_', strtolower(Yii::$app->name)) . '.com';
         }
         return $hostName;
     }
@@ -128,7 +209,9 @@ class SelfUpdateController extends Controller
     public function actionIndex()
     {
         try {
-            $projectRootPath = $this->getProjectRootPath();
+            $this->linkWebStubs();
+
+            $projectRootPath = Yii::getAlias($this->projectRootPath);
             $output = $this->execShellCommand('(cd ' . escapeshellarg($projectRootPath) . '; hg pull)');
 
             if (strpos($output, 'hg update') !== false) {
@@ -138,6 +221,8 @@ class SelfUpdateController extends Controller
                 $this->log('Cache flushed.');
                 $this->reportSuccess();
             }
+
+            $this->linkWebPaths();
         } catch (\Exception $exception) {
             $this->log($exception->getMessage());
             $this->reportFail();
@@ -173,7 +258,7 @@ class SelfUpdateController extends Controller
      */
     protected function execShellCommand($command)
     {
-        $outputLines = array();
+        $outputLines = [];
         $this->log($command);
         exec($command . ' 2>&1', $outputLines, $responseCode);
         $output = implode("\n", $outputLines);
@@ -216,12 +301,9 @@ class SelfUpdateController extends Controller
         if (!empty($emails)) {
             @$userName = exec('whoami');
             if (empty($userName)) {
-                $userName = $this->getName();
+                $userName = $this->getUniqueId();
             }
-            @$hostName = exec('hostname');
-            if (empty($hostName)) {
-                $hostName = preg_replace('/[^a-z0-1_]/s', '_', strtolower(Yii::$app->name)) . '.com';
-            }
+            $hostName = $this->getHostName();
             $from = $userName . '@' . $hostName;
             $subject = $subjectPrefix . ': ' . $this->getHostName() . ' at ' . $this->getCurrentDate();
             $message = implode("\n", $this->flushLog());
@@ -240,13 +322,13 @@ class SelfUpdateController extends Controller
      */
     protected function sendEmail($from, $email, $subject, $message)
     {
-        $headers = array(
+        $headers = [
             "MIME-Version: 1.0",
             "Content-Type: text/plain; charset=UTF-8",
-        );
+        ];
         $subject = '=?UTF-8?B?' . base64_encode($subject) . '?=';
 
-        $matches = array();
+        $matches = [];
         preg_match_all('/([^<]*)<([^>]*)>/iu', $from, $matches);
         if (isset($matches[1][0],$matches[2][0])) {
             $name = $this->utf8 ? '=?UTF-8?B?' . base64_encode(trim($matches[1][0])) . '?=' : trim($matches[1][0]);
