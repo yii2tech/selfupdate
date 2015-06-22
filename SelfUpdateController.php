@@ -359,19 +359,18 @@ class SelfUpdateController extends Controller
      */
     protected function execShellCommand($command)
     {
-        $outputLines = [];
-        $this->log($command);
-        exec($command . ' 2>&1', $outputLines, $responseCode);
-        $output = implode("\n", $outputLines);
-        if ($responseCode != 0) {
-            throw new Exception("Execution of '{$command}' failed: response code = '{$responseCode}': \nOutput: \n{$output}");
+        $result = Shell::execute($command);
+        $this->log($result->toString());
+
+        $output = $result->getOutput();
+        if (!$result->isOk()) {
+            throw new Exception("Execution of '{$command}' failed: exit code = '{$result->exitCode}': \nOutput: \n{$output}");
         }
         foreach ($this->shellResponseErrorKeywords as $errorKeyword) {
             if (stripos($output, $errorKeyword) !== false) {
                 throw new Exception("Execution of '{$command}' failed! \nOutput: \n{$output}");
             }
         }
-        $this->log($output);
         return $output;
     }
 
