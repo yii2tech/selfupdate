@@ -4,6 +4,8 @@ namespace yii2tech\tests\unit\selfupdate;
 
 use Yii;
 use yii\helpers\FileHelper;
+use yii2tech\selfupdate\Git;
+use yii2tech\selfupdate\Mercurial;
 use yii2tech\selfupdate\SelfUpdateController;
 
 class SelfUpdateControllerTest extends TestCase
@@ -105,6 +107,25 @@ class SelfUpdateControllerTest extends TestCase
 
         $this->assertTrue(is_link($linkPath));
         $this->assertEquals($stubPath, readlink($linkPath));
+    }
+
+    public function testDetectVersionControlSystem()
+    {
+        $testPath = $this->getTestFilePath();
+        $vcsDir = $testPath . DIRECTORY_SEPARATOR . '.git';
+        FileHelper::createDirectory($vcsDir);
+
+        $controller = $this->createController();
+
+        $vcs = $this->invoke($controller, 'detectVersionControlSystem', [$testPath]);
+        $this->assertTrue($vcs instanceof Git);
+
+        FileHelper::removeDirectory($vcsDir);
+        $vcsDir = $testPath . DIRECTORY_SEPARATOR . '.hg';
+        FileHelper::createDirectory($vcsDir);
+
+        $vcs = $this->invoke($controller, 'detectVersionControlSystem', [$testPath]);
+        $this->assertTrue($vcs instanceof Mercurial);
     }
 }
 

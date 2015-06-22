@@ -8,19 +8,19 @@
 namespace yii2tech\selfupdate;
 
 /**
- * Mercurial represents Mercurial (Hg) version control system.
+ * Git represents GIT version control system.
  *
- * @see https://mercurial.selenic.com/
+ * @see https://git-scm.com/
  *
  * @author Paul Klimov <klimov.paul@gmail.com>
  * @since 1.0
  */
-class Mercurial extends VersionControlSystem
+class Git extends VersionControlSystem
 {
     /**
      * @var string path to the 'hg' bin command.
      */
-    public $binPath = 'hg';
+    public $binPath = 'git';
 
     /**
      * Checks, if there are some changes in remote repository.
@@ -30,12 +30,7 @@ class Mercurial extends VersionControlSystem
      */
     public function hasRemoteChanges($projectRoot, &$log = null)
     {
-        $result = Shell::execute('(cd {projectRoot}; {binPath} incoming --newest-first --limit 1)', [
-            '{binPath}' => $this->binPath,
-            '{projectRoot}' => $projectRoot,
-        ]);
-        $log = $result->getOutput();
-        return $result->isOk();
+        // TODO: Implement hasRemoteChanges() method.
     }
 
     /**
@@ -46,11 +41,6 @@ class Mercurial extends VersionControlSystem
      */
     public function applyRemoteChanges($projectRoot, &$log = null)
     {
-        $result = Shell::execute('(cd {projectRoot}; {binPath} pull -u)', [
-            '{binPath}' => $this->binPath,
-            '{projectRoot}' => $projectRoot,
-        ]);
-        $log = $result->getOutput();
-        return $result->isOk();
+        // TODO: Implement applyRemoteChanges() method.
     }
 }

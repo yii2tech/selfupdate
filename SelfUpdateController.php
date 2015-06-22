@@ -95,11 +95,6 @@ class SelfUpdateController extends Controller
      */
     public $afterUpdateCommands = [];
     /**
-     * @var array list of log entries.
-     * @see log()
-     */
-    private $logLines = [];
-    /**
      * @var array list of keywords, which presence in the shell command output is considered as
      * its execution error.
      */
@@ -108,6 +103,23 @@ class SelfUpdateController extends Controller
         'exception',
         'ошибка',
     ];
+    /**
+     * @var array list of possible version control systems (VCS) in format: vcsFolderName => classConfig.
+     * VCS will be detected automatically based on which folder is available inside [[projectRootPath]]
+     */
+    public $versionControlSystems = [
+        '.git' => [
+            'class' => 'yii2tech\selfupdate\Git'
+        ],
+        '.hg' => [
+            'class' => 'yii2tech\selfupdate\Mercurial'
+        ],
+    ];
+    /**
+     * @var array list of log entries.
+     * @see log()
+     */
+    private $logLines = [];
 
 
     /**
@@ -136,23 +148,29 @@ class SelfUpdateController extends Controller
         try {
             $this->normalizeWebPaths();
 
-            $this->linkWebStubs();
-
             $projectRootPath = Yii::getAlias($this->projectRootPath);
 
-            $output = $this->execShellCommand('(cd ' . escapeshellarg($projectRootPath) . '; hg pull)');
+            $versionControlSystem = $this->detectVersionControlSystem($projectRootPath);
 
-            if (strpos($output, 'hg update') !== false) {
+            $changesDetected = $versionControlSystem->hasRemoteChanges($projectRootPath, $log);
+            $this->log($log);
+
+            if ($changesDetected) {
+                $this->linkWebStubs();
+
                 $this->executeCommands($this->beforeUpdateCommands);
 
-                $this->execShellCommand('(cd ' . escapeshellarg($projectRootPath) . '; hg update --clean)');
+                $versionControlSystem->applyRemoteChanges($projectRootPath, $log);
+                $this->log($log);
 
                 $this->executeCommands($this->afterUpdateCommands);
                 $this->flushCache();
+
+                $this->linkWebPaths();
+
                 $this->reportSuccess();
             }
 
-            $this->linkWebPaths();
         } catch (\Exception $exception) {
             $this->log($exception->getMessage());
             $this->reportFail();
@@ -290,6 +308,22 @@ class SelfUpdateController extends Controller
             }
             $this->log('Cache flushed.');
         }
+    }
+
+    /**
+     * Detects version control system used for the project.
+     * @param string $path project root path.
+     * @return VersionControlSystemInterface version control system instance.
+     * @throws InvalidConfigException on failure.
+     */
+    protected function detectVersionControlSystem($path)
+    {
+        foreach ($this->versionControlSystems as $folderName => $config) {
+            if (file_exists($path . DIRECTORY_SEPARATOR . $folderName)) {
+                return Yii::createObject($config);
+            }
+        }
+        throw new InvalidConfigException("Unable to detect version control system: neither of '" . implode(', ', array_keys($this->versionControlSystems)) . "' is present under '{$path}'.");
     }
 
     /**
