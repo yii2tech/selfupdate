@@ -21,6 +21,8 @@ class Git extends VersionControlSystem
 {
     /**
      * @var string path to the 'git' bin command.
+     * By default simple 'git' is used assuming it available as global shell command.
+     * It could be '/usr/bin/git' for example.
      */
     public $binPath = 'git';
     /**
@@ -57,10 +59,10 @@ class Git extends VersionControlSystem
      */
     public function hasRemoteChanges($projectRoot, &$log = null)
     {
-        $branchName = $this->getCurrentBranch($projectRoot);
-        $result = Shell::execute("(cd {projectRoot}; {binPath} diff --summary {$this->remoteName}/{$branchName})", [
+        $result = Shell::execute('(cd {projectRoot}; {binPath} diff --summary {remoteBranch})', [
             '{binPath}' => $this->binPath,
             '{projectRoot}' => $projectRoot,
+            '{remoteBranch}' => $this->remoteName . '/' . $this->getCurrentBranch($projectRoot),
         ]);
         $log = $result->toString();
         return ($result->isOk() && !$result->isOutputEmpty());
@@ -74,10 +76,10 @@ class Git extends VersionControlSystem
      */
     public function applyRemoteChanges($projectRoot, &$log = null)
     {
-        $branchName = $this->getCurrentBranch($projectRoot);
-        $result = Shell::execute("(cd {projectRoot}; {binPath} pull {$this->remoteName}/{$branchName})", [
+        $result = Shell::execute('(cd {projectRoot}; {binPath} pull {remoteBranch})', [
             '{binPath}' => $this->binPath,
             '{projectRoot}' => $projectRoot,
+            '{remoteBranch}' => $this->remoteName . '/' . $this->getCurrentBranch($projectRoot),
         ]);
         $log = $result->toString();
         return $result->isOk();

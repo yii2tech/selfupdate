@@ -19,9 +19,25 @@ class Mercurial extends VersionControlSystem
 {
     /**
      * @var string path to the 'hg' bin command.
+     * By default simple 'hg' is used assuming it available as global shell command.
+     * It could be '/usr/bin/hg' for example.
      */
     public $binPath = 'hg';
 
+
+    /**
+     * Returns currently active Mercurial branch name for the project.
+     * @param string $projectRoot VCS project root directory path.
+     * @return string branch name.
+     */
+    public function getCurrentBranch($projectRoot)
+    {
+        $result = Shell::execute('(cd {projectRoot}; {binPath} branch)', [
+            '{binPath}' => $this->binPath,
+            '{projectRoot}' => $projectRoot,
+        ]);
+        return $result->outputLines[0];
+    }
 
     /**
      * Checks, if there are some changes in remote repository.
@@ -31,9 +47,10 @@ class Mercurial extends VersionControlSystem
      */
     public function hasRemoteChanges($projectRoot, &$log = null)
     {
-        $result = Shell::execute('(cd {projectRoot}; {binPath} incoming --newest-first --limit 1)', [
+        $result = Shell::execute("(cd {projectRoot}; {binPath} incoming -b {branch} --newest-first --limit 1)", [
             '{binPath}' => $this->binPath,
             '{projectRoot}' => $projectRoot,
+            '{branch}' => $this->getCurrentBranch($projectRoot),
         ]);
         $log = $result->toString();
         return $result->isOk();
@@ -47,9 +64,10 @@ class Mercurial extends VersionControlSystem
      */
     public function applyRemoteChanges($projectRoot, &$log = null)
     {
-        $result = Shell::execute('(cd {projectRoot}; {binPath} pull -u)', [
+        $result = Shell::execute('(cd {projectRoot}; {binPath} pull -b {branch} -u)', [
             '{binPath}' => $this->binPath,
             '{projectRoot}' => $projectRoot,
+            '{branch}' => $this->getCurrentBranch($projectRoot),
         ]);
         $log = $result->toString();
         return $result->isOk();
