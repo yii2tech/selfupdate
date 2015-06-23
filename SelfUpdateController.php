@@ -18,7 +18,7 @@ use yii\mutex\Mutex;
 
 /**
  * SelfUpdateController performs project update from VCS.
- * This command assumes project is store under Mercurial (.hg) version control system.
+ * You can configure available version control systems via [[versionControlSystems]].
  *
  * Note: in order to work properly this command requires execution of VCS command without any prompt
  * or user input.
@@ -67,7 +67,8 @@ class SelfUpdateController extends Controller
      */
     public $webPaths = [];
     /**
-     * @var string|array
+     * @var string|array list of cache application components, for which [[Cache::flush()]] method should be invoked.
+     * Component ids, instances or array configurations can be used here.
      */
     public $cache;
     /**
