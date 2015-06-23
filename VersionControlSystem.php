@@ -17,8 +17,4 @@ use yii\base\Object;
  */
 abstract class VersionControlSystem extends Object implements VersionControlSystemInterface
 {
-    /**
-     * @var string path to the version control bin command.
-     */
-    public $binPath;
 }

@@ -27,6 +27,16 @@ class ShellResultTest extends TestCase
         $this->assertFalse($shellResult->isOk());
     }
 
+    public function testIsOutputEmpty()
+    {
+        $shellResult = new ShellResult();
+
+        $this->assertTrue($shellResult->isOutputEmpty());
+
+        $shellResult->outputLines = ['line1'];
+        $this->assertFalse($shellResult->isOutputEmpty());
+    }
+
     /**
      * @depends testGetOutput
      */

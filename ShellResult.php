@@ -33,6 +33,7 @@ class ShellResult extends Object
      */
     public $outputLines = [];
 
+
     /**
      * @param string $glue lines glue.
      * @return string shell command output.
@@ -48,6 +49,14 @@ class ShellResult extends Object
     public function isOk()
     {
         return $this->exitCode === 0;
+    }
+
+    /**
+     * @return boolean whether command execution produced empty output.
+     */
+    public function isOutputEmpty()
+    {
+        return empty($this->outputLines);
     }
 
     /**

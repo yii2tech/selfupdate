@@ -22,6 +22,7 @@ class Mercurial extends VersionControlSystem
      */
     public $binPath = 'hg';
 
+
     /**
      * Checks, if there are some changes in remote repository.
      * @param string $projectRoot VCS project root directory path.
@@ -34,7 +35,7 @@ class Mercurial extends VersionControlSystem
             '{binPath}' => $this->binPath,
             '{projectRoot}' => $projectRoot,
         ]);
-        $log = $result->getOutput();
+        $log = $result->toString();
         return $result->isOk();
     }
 
@@ -50,7 +51,7 @@ class Mercurial extends VersionControlSystem
             '{binPath}' => $this->binPath,
             '{projectRoot}' => $projectRoot,
         ]);
-        $log = $result->getOutput();
+        $log = $result->toString();
         return $result->isOk();
     }
 }

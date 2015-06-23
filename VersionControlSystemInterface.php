@@ -8,7 +8,8 @@
 namespace yii2tech\selfupdate;
 
 /**
- * VersionControlSystem
+ * VersionControlSystem is an interface, which particular version control system implementation should match
+ * in order to be used with [[SelfUpdateController]].
  *
  * @author Paul Klimov <klimov.paul@gmail.com>
  * @since 1.0

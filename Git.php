@@ -7,6 +7,8 @@
 
 namespace yii2tech\selfupdate;
 
+use yii\base\Exception;
+
 /**
  * Git represents GIT version control system.
  *
@@ -18,9 +20,34 @@ namespace yii2tech\selfupdate;
 class Git extends VersionControlSystem
 {
     /**
-     * @var string path to the 'hg' bin command.
+     * @var string path to the 'git' bin command.
      */
     public $binPath = 'git';
+    /**
+     * @var string name of the GIT remote, which should be used to get changes.
+     */
+    public $remoteName = 'origin';
+
+
+    /**
+     * Returns currently active GIT branch name for the project.
+     * @param string $projectRoot VCS project root directory path.
+     * @return string branch name.
+     * @throws Exception on failure.
+     */
+    public function getCurrentBranch($projectRoot)
+    {
+        $result = Shell::execute('(cd {projectRoot}; {binPath} branch)', [
+            '{binPath}' => $this->binPath,
+            '{projectRoot}' => $projectRoot,
+        ]);
+        foreach ($result->outputLines as $line) {
+            if (($pos = stripos($line, '* ')) === 0) {
+                return trim(substr($line, $pos + 2));
+            }
+        }
+        throw new Exception('Unable to detect current GIT branch: ' . $result->toString());
+    }
 
     /**
      * Checks, if there are some changes in remote repository.
@@ -30,7 +57,13 @@ class Git extends VersionControlSystem
      */
     public function hasRemoteChanges($projectRoot, &$log = null)
     {
-        // TODO: Implement hasRemoteChanges() method.
+        $branchName = $this->getCurrentBranch($projectRoot);
+        $result = Shell::execute("(cd {projectRoot}; {binPath} diff --summary {$this->remoteName}/{$branchName})", [
+            '{binPath}' => $this->binPath,
+            '{projectRoot}' => $projectRoot,
+        ]);
+        $log = $result->toString();
+        return ($result->isOk() && !$result->isOutputEmpty());
     }
 
     /**
@@ -41,6 +74,12 @@ class Git extends VersionControlSystem
      */
     public function applyRemoteChanges($projectRoot, &$log = null)
     {
-        // TODO: Implement applyRemoteChanges() method.
+        $branchName = $this->getCurrentBranch($projectRoot);
+        $result = Shell::execute("(cd {projectRoot}; {binPath} pull {$this->remoteName}/{$branchName})", [
+            '{binPath}' => $this->binPath,
+            '{projectRoot}' => $projectRoot,
+        ]);
+        $log = $result->toString();
+        return $result->isOk();
     }
 }
