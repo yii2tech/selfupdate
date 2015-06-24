@@ -14,6 +14,7 @@ use yii\console\Controller;
 use Yii;
 use yii\di\Instance;
 use yii\helpers\Console;
+use yii\mail\BaseMailer;
 use yii\mutex\Mutex;
 
 /**
@@ -129,6 +130,12 @@ class SelfUpdateController extends Controller
     public $composerRootPaths = [
         '@app'
     ];
+    /**
+     * @var \yii\mail\MailerInterface|array|string the mailer object or the application component ID of the mailer.
+     * It will be used to send notification messages to [[emails]].
+     * If sending email via this component fails, the fallback to the plain PHP `mail()` function will be used instead.
+     */
+    public $mailer;
     /**
      * @var array list of log entries.
      * @see log()
@@ -486,6 +493,33 @@ class SelfUpdateController extends Controller
      */
     protected function sendEmail($from, $email, $subject, $message)
     {
+        try {
+            /* @var $mailer \yii\mail\MailerInterface */
+            $mailer = Instance::ensure($this->mailer, 'yii\mail\MailerInterface');
+            if ($mailer instanceof BaseMailer) {
+                $mailer->useFileTransport = false; // ensure mailer is not in test mode
+            }
+            $mailer->compose()
+                ->setFrom($from)
+                ->setTo($email)
+                ->setSubject($subject)
+                ->setTextBody($message)
+                ->send();
+        } catch (\Exception $exception) {
+            $this->log($exception->getMessage());
+            $this->sendEmailFallback($from, $email, $subject, $message);
+        }
+    }
+
+    /**
+     * Sends an email via plain PHP `mail()` function.
+     * @param string $from sender email address
+     * @param string $email single email address
+     * @param string $subject email subject
+     * @param string $message email content
+     */
+    protected function sendEmailFallback($from, $email, $subject, $message)
+    {
         $headers = [
             "MIME-Version: 1.0",
             "Content-Type: text/plain; charset=UTF-8",
@@ -495,7 +529,7 @@ class SelfUpdateController extends Controller
         $matches = [];
         preg_match_all('/([^<]*)<([^>]*)>/iu', $from, $matches);
         if (isset($matches[1][0],$matches[2][0])) {
-            $name = $this->utf8 ? '=?UTF-8?B?' . base64_encode(trim($matches[1][0])) . '?=' : trim($matches[1][0]);
+            $name = '=?UTF-8?B?' . base64_encode(trim($matches[1][0])) . '?=';
             $from = trim($matches[2][0]);
             $headers[] = "From: {$name} <{$from}>";
         } else {
