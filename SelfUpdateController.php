@@ -25,6 +25,28 @@ use yii\mutex\Mutex;
  * Note: in order to work properly this command requires execution of VCS command without any prompt
  * or user input.
  *
+ * In order to enable this controller for your console application, you should add via 'controllerMap':
+ *
+ * ```php
+ * return [
+ *     'controllerMap' => [
+ *         'self-update' => 'yii2tech\selfupdate\SelfUpdateController'
+ *     ],
+ *     ...
+ * ];
+ * ```
+ *
+ * Usage:
+ *
+ * 1. Create a configuration file using the `config` action:
+ *
+ *    yii self-update/config @app/config/selfupdate.php
+ *
+ * 2. Edit the created config file, adjusting it for your project needs.
+ * 3. Run the 'perform' action, using created config:
+ *
+ *    yii self-update @app/config/selfupdate.php
+ *
  * @author Paul Klimov <klimov.paul@gmail.com>
  * @since 1.0
  */
