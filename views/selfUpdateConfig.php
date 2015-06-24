@@ -28,6 +28,13 @@ return [
     'cache' => [
         'cache'
     ],
+    // temporary directories, which should be cleared after project update
+    'tmpDirectories' => [
+        '@app/web/assets',
+        '@runtime/URI',
+        '@runtime/HTML',
+        '@runtime/debug',
+    ],
     // list of commands, which should be executed before project update begins
     'beforeUpdateCommands' => [],
     // list of shell commands, which should be executed after project update

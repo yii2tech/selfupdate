@@ -14,6 +14,7 @@ use yii\console\Controller;
 use Yii;
 use yii\di\Instance;
 use yii\helpers\Console;
+use yii\helpers\FileHelper;
 use yii\mail\BaseMailer;
 use yii\mutex\Mutex;
 
@@ -72,6 +73,20 @@ class SelfUpdateController extends Controller
      * Component ids, instances or array configurations can be used here.
      */
     public $cache;
+    /**
+     * @var array list of temporary directories, which should be cleared after project update.
+     * Path aliases can be used here. For example:
+     *
+     * ```php
+     * [
+     *     '@app/web/assets',
+     *     '@runtime/URI',
+     *     '@runtime/HTML',
+     *     '@runtime/debug',
+     * ]
+     * ```
+     */
+    public $tmpDirectories = [];
     /**
      * @var array list of commands, which should be executed before project update begins.
      * If command is a string it will be executed as shell command, otherwise as PHP callback.
@@ -186,6 +201,7 @@ class SelfUpdateController extends Controller
 
                 $this->updateVendor();
                 $this->flushCache();
+                $this->clearTmpDirectories();
 
                 $this->executeCommands($this->afterUpdateCommands);
 
@@ -331,6 +347,53 @@ class SelfUpdateController extends Controller
             }
             $this->log('Cache flushed.');
         }
+    }
+
+    /**
+     * Clears all directories specified via [[tmpDirectories]].
+     */
+    protected function clearTmpDirectories()
+    {
+        foreach ($this->tmpDirectories as $path) {
+            $realPath = Yii::getAlias($path);
+            $this->clearDirectory($realPath);
+            $this->log("Directory '{$realPath}' cleared.");
+        }
+    }
+
+    /**
+     * Clears specified directory.
+     * @param string $dir directory to be cleared.
+     */
+    protected function clearDirectory($dir)
+    {
+        if (!is_dir($dir)) {
+            return;
+        }
+        if (!($handle = opendir($dir))) {
+            return;
+        }
+        $specialFileNames = [
+            '.gitignore',
+            '.gitkeep',
+            '.hgignore',
+            '.hgtkeep',
+        ];
+        while (($file = readdir($handle)) !== false) {
+            if ($file === '.' || $file === '..') {
+                continue;
+            }
+            if (in_array($file, $specialFileNames)) {
+                continue;
+            }
+            $path = $dir . DIRECTORY_SEPARATOR . $file;
+            if (is_dir($path)) {
+                FileHelper::removeDirectory($path);
+            } else {
+                unlink($path);
+            }
+        }
+        closedir($handle);
     }
 
     /**

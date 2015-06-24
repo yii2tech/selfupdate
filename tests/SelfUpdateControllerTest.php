@@ -127,6 +127,27 @@ class SelfUpdateControllerTest extends TestCase
         $vcs = $this->invoke($controller, 'detectVersionControlSystem', [$testPath]);
         $this->assertTrue($vcs instanceof Mercurial);
     }
+
+    public function testClearTmpDirectories()
+    {
+        $tmpPath = $this->getTestFilePath();
+        $controller = $this->createController(['tmpDirectories' => [$tmpPath]]);
+
+        $fileName = $tmpPath . DIRECTORY_SEPARATOR . 'test.txt';
+        file_put_contents($fileName, 'test content');
+        $dirName = $tmpPath . DIRECTORY_SEPARATOR . 'test_dir';
+        FileHelper::createDirectory($dirName);
+
+        $this->invoke($controller, 'clearTmpDirectories');
+        $this->assertFileNotExists($fileName);
+        $this->assertFileNotExists($dirName);
+        $this->assertFileExists($tmpPath);
+
+        $specialFileName = $tmpPath . DIRECTORY_SEPARATOR . '.gitkeep';
+        file_put_contents($specialFileName, '#test');
+        $this->invoke($controller, 'clearTmpDirectories');
+        $this->assertFileExists($specialFileName);
+    }
 }
 
 class SelfUpdateControllerMock extends SelfUpdateController
