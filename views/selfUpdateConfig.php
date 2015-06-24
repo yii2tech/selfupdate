@@ -10,7 +10,7 @@
 return [
     // list of email addresses, which should be used to send execution reports
     'emails' => [
-        'developer@domain.com'
+        //'developer@domain.com',
     ],
     // Mutex component to be used
     'mutex' => 'mutex',
@@ -34,4 +34,9 @@ return [
     'afterUpdateCommands' => [
         "php {$_SERVER['SCRIPT_FILENAME']} migrate/up --interactive=0",
     ],
+    // adjust Composer settings, if necessary :
+    /*'composerBinPath' => 'composer',
+    'composerRootPaths' => [
+        '@app'
+    ],*/
 ];

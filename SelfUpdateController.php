@@ -117,6 +117,19 @@ class SelfUpdateController extends Controller
         ],
     ];
     /**
+     * @var string path to the 'composer' bin command.
+     * By default simple 'composer' is used, assuming it available as global shell command.
+     * Path alias can be used here. For example: '@app/composer.phar'.
+     */
+    public $composerBinPath = 'composer';
+    /**
+     * @var array list of composer install root paths (the ones containing 'composer.json').
+     * Path aliases can be used here.
+     */
+    public $composerRootPaths = [
+        '@app'
+    ];
+    /**
      * @var array list of log entries.
      * @see log()
      */
@@ -164,8 +177,10 @@ class SelfUpdateController extends Controller
                 $versionControlSystem->applyRemoteChanges($projectRootPath, $log);
                 $this->log($log);
 
-                $this->executeCommands($this->afterUpdateCommands);
+                $this->updateVendor();
                 $this->flushCache();
+
+                $this->executeCommands($this->afterUpdateCommands);
 
                 $this->linkWebPaths();
 
@@ -312,6 +327,19 @@ class SelfUpdateController extends Controller
     }
 
     /**
+     * Performs vendors update via Composer at all [[composerRootPaths]].
+     */
+    protected function updateVendor()
+    {
+        foreach ($this->composerRootPaths as $path) {
+            $this->execShellCommand('(cd {composerRoot}; {composer} install --no-interaction)', [
+                'composerRoot' => Yii::getAlias($path),
+                'composer' => Yii::getAlias($this->composerBinPath),
+            ]);
+        }
+    }
+
+    /**
      * Detects version control system used for the project.
      * @param string $path project root path.
      * @return VersionControlSystemInterface version control system instance.
@@ -390,11 +418,12 @@ class SelfUpdateController extends Controller
      * Executes shell command.
      * @param string $command command text.
      * @return string command output.
+     * @param array $placeholders placeholders to be replaced using `escapeshellarg()` in format: placeholder => value.
      * @throws Exception on failure.
      */
-    protected function execShellCommand($command)
+    protected function execShellCommand($command, array $placeholders = [])
     {
-        $result = Shell::execute($command);
+        $result = Shell::execute($command, $placeholders);
         $this->log($result->toString());
 
         $output = $result->getOutput();
