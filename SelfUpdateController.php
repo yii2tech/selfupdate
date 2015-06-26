@@ -15,6 +15,7 @@ use Yii;
 use yii\di\Instance;
 use yii\helpers\Console;
 use yii\helpers\FileHelper;
+use yii\helpers\Inflector;
 use yii\mail\BaseMailer;
 use yii\mutex\Mutex;
 
@@ -454,7 +455,7 @@ class SelfUpdateController extends Controller
     {
         $hostName = @exec('hostname');
         if (empty($hostName)) {
-            $hostName = preg_replace('/[^a-z0-1_]/s', '_', strtolower(Yii::$app->name)) . '.com';
+            $hostName = Inflector::slug(Yii::$app->name) . '.com';
         }
         return $hostName;
     }
@@ -555,9 +556,9 @@ class SelfUpdateController extends Controller
     {
         $emails = $this->emails;
         if (!empty($emails)) {
-            @$userName = exec('whoami');
+            $userName = @exec('whoami');
             if (empty($userName)) {
-                $userName = $this->getUniqueId();
+                $userName = Inflector::slug(Yii::$app->name);
             }
             $hostName = $this->getHostName();
             $from = $userName . '@' . $hostName;
