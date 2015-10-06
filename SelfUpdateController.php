@@ -426,8 +426,8 @@ class SelfUpdateController extends Controller
     {
         foreach ($this->composerRootPaths as $path) {
             $this->execShellCommand('(cd {composerRoot}; {composer} install --no-interaction)', [
-                'composerRoot' => Yii::getAlias($path),
-                'composer' => Yii::getAlias($this->composerBinPath),
+                '{composerRoot}' => Yii::getAlias($path),
+                '{composer}' => Yii::getAlias($this->composerBinPath),
             ]);
         }
     }
