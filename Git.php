@@ -59,10 +59,11 @@ class Git extends VersionControlSystem
      */
     public function hasRemoteChanges($projectRoot, &$log = null)
     {
-        $result = Shell::execute('(cd {projectRoot}; {binPath} diff --summary {remoteBranch})', [
+        $result = Shell::execute('(cd {projectRoot}; {binPath} fetch {remote} {branch}; {binPath} diff --numstat HEAD {remote}/{branch})', [
             '{binPath}' => $this->binPath,
             '{projectRoot}' => $projectRoot,
-            '{remoteBranch}' => $this->remoteName . '/' . $this->getCurrentBranch($projectRoot),
+            '{remote}' => $this->remoteName,
+            '{branch}' => $this->getCurrentBranch($projectRoot),
         ]);
         $log = $result->toString();
         return ($result->isOk() && !$result->isOutputEmpty());
@@ -76,10 +77,11 @@ class Git extends VersionControlSystem
      */
     public function applyRemoteChanges($projectRoot, &$log = null)
     {
-        $result = Shell::execute('(cd {projectRoot}; {binPath} pull {remoteBranch})', [
+        $result = Shell::execute('(cd {projectRoot}; {binPath} merge {remote}/{branch})', [
             '{binPath}' => $this->binPath,
             '{projectRoot}' => $projectRoot,
-            '{remoteBranch}' => $this->remoteName . '/' . $this->getCurrentBranch($projectRoot),
+            '{remote}' => $this->remoteName,
+            '{branch}' => $this->getCurrentBranch($projectRoot),
         ]);
         $log = $result->toString();
         return $result->isOk();
