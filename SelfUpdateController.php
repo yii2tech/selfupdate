@@ -231,6 +231,8 @@ class SelfUpdateController extends Controller
                 $this->linkWebPaths();
 
                 $this->reportSuccess();
+            } else {
+                $this->log('No changes detected. Project is already up-to-date.');
             }
 
         } catch (\Exception $exception) {
