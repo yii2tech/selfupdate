@@ -59,13 +59,18 @@ class Git extends VersionControlSystem
      */
     public function hasRemoteChanges($projectRoot, &$log = null)
     {
-        $result = Shell::execute('(cd {projectRoot}; {binPath} fetch {remote} {branch}; {binPath} diff --numstat HEAD {remote}/{branch})', [
+        $placeholders = [
             '{binPath}' => $this->binPath,
             '{projectRoot}' => $projectRoot,
             '{remote}' => $this->remoteName,
             '{branch}' => $this->getCurrentBranch($projectRoot),
-        ]);
-        $log = $result->toString();
+        ];
+
+        $fetchResult = Shell::execute('(cd {projectRoot}; {binPath} fetch {remote} {branch})', $placeholders);
+        $log = $fetchResult->toString();
+
+        $result = Shell::execute('(cd {projectRoot}; {binPath} diff --numstat HEAD {remote}/{branch})', $placeholders);
+        $log .= $result->toString();
         return ($result->isOk() && !$result->isOutputEmpty());
     }
 
