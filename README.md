@@ -8,13 +8,13 @@ as [GIT](https://git-scm.com/) or [Mercurial](https://mercurial.selenic.com/). S
  - apply remote VCS changes
  - update 'vendor' directory via Composer
  - clear application cache and temporary directories
- - perform additional actions like applying database migrations
- - link web server web directories to the project web directories once update is complete
+ - perform additional actions, like applying database migrations
+ - link web server web directories to the project web directories, once update is complete
  - notify developer(s) about update result via email
 
 > Note: this solution is very basic and may not suite for the complex project update workflow. You may consider
-  usage of more sophisticated tools like [Phing](https://www.phing.info/). This extension may be used as a part of
-  such solution.
+  usage of more sophisticated tools like [Phing](https://www.phing.info/). However, this extension may be used as a part
+  of such solution.
 
 For license information check the [LICENSE](LICENSE.md)-file.
 
@@ -78,13 +78,13 @@ yii self-update
 In order to use 'self-update' command, you should perform several preparations in your project, allowing
 certain shell commands to be executed in non-interactive (without user prompt) mode.
 
-First of all you should clone (checkout) your project from version control system and switch project working copy
-to the branch, which should be used at this particular server. Using GIT this actions can be performed in following commands:
+First of all, you should clone (checkout) your project from version control system and switch project working copy
+to the branch, which should be used at this particular server. Using GIT this actions can be performed via following commands:
 
 ```
 cd /path/to/my/project
 git clone git@my-git-server.com/myproject.git
-git checkout live
+git checkout production
 ```
 
 > Attention: you need to configure your VCS (or at least your project working copy) in the way interacting with remote
@@ -101,7 +101,7 @@ Once project is setup you need to create a configuration for its updating. This 
 command:
 
 ```
-yii self-update/config @app/config/selfupdate.php
+yii self-update/config @app/config/self-update.php
 ```
 
 This will generate configuration file, which should be manually adjusted depending on the particular project structure
@@ -115,6 +115,8 @@ return [
     'emails' => [
         'developer@domain.com',
     ],
+    // Mailer component to be used
+    'mailer' => 'mailer',
     // Mutex component to be used
     'mutex' => 'mutex',
     // path to project root directory (VCS root directory)
@@ -150,11 +152,11 @@ Please refer to [[yii2tech\selfupdate\SelfUpdateController]] for particular opti
 Once you have made all necessary adjustments at configuration file, you can run 'self-update/perform' command with it:
 
 ```
-yii self-update @app/config/selfupdate.php
+yii self-update @app/config/self-update.php
 ```
 
 > Note: it is not necessary to create a separated configuration file: you can configure all necessary fields of
-  `yii2tech\selfupdate\SelfUpdateController` inside `controllerMap` specification, but such approach is no common.
+  `yii2tech\selfupdate\SelfUpdateController` inside `controllerMap` specification, but such approach is not recommended.
 
 
 Self Update Workflow
@@ -166,21 +168,21 @@ While running, [[yii2tech\selfupdate\SelfUpdateController]] performs following s
  - apply remote VCS changes
  - update 'vendor' directory via Composer
  - clear application cache and temporary directories
- - perform additional actions like applying database migrations
- - link web server web directories to the project web directories once update is complete
+ - perform additional actions, like applying database migrations
+ - link web server web directories to the project web directories, once update is complete
  - notify developer(s) about update result via email
 
 At the first stage there is a check for any changes in the remote repository. If there is no changes in remote
 repository for the current project VCS working copy branch, no further actions will be performed!
 
-If remote changes detected the symbolic links pointing to the project '@web' directory will be switched to another
+If remote changes detected, the symbolic links pointing to the project '@web' directory will be switched to another
 directory, which should contain a 'stub' - some static HTML page, which says something like 'Application is under the
-maintenance, please check again later'. Although, usage of such stub it is up to you, it is recommended because actual
+maintenance, please check again later'. Although, usage of such stub it is up to you, it is recommended, because actual
 project update may take significant time before being complete.
 Project web directory will be linked back instead of stub, only after all update actions are performed.
 
 During update itself VCS remote changes are applied, `vendor` directory is updated via Composer, specified temporary
 directories will be cleared and cache flushed.
 
-> Note: in order for Composer be able to apply necessary changes the 'composer.lock' file should be tracked by version
-  control system.
+> Note: in order for Composer be able to apply necessary changes, the 'composer.lock' file should be tracked by version
+  control system!
