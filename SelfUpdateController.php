@@ -171,9 +171,10 @@ class SelfUpdateController extends Controller
     /**
      * @var \yii\mail\MailerInterface|array|string the mailer object or the application component ID of the mailer.
      * It will be used to send notification messages to [[emails]].
-     * If sending email via this component fails, the fallback to the plain PHP `mail()` function will be used instead.
+     * If not set or sending email via this component fails, the fallback to the plain PHP `mail()` function will be used instead.
      */
     public $mailer;
+
     /**
      * @var array list of log entries.
      * @see log()
@@ -399,6 +400,7 @@ class SelfUpdateController extends Controller
             return;
         }
         $specialFileNames = [
+            '.htaccess',
             '.gitignore',
             '.gitkeep',
             '.hgignore',
@@ -578,16 +580,21 @@ class SelfUpdateController extends Controller
      * @param string $email single email address
      * @param string $subject email subject
      * @param string $message email content
+     * @return boolean success.
      */
     protected function sendEmail($from, $email, $subject, $message)
     {
+        if ($this->mailer === null) {
+            return $this->sendEmailFallback($from, $email, $subject, $message);
+        }
+
         try {
-            /* @var $mailer \yii\mail\MailerInterface */
+            /* @var $mailer \yii\mail\MailerInterface|BaseMailer */
             $mailer = Instance::ensure($this->mailer, 'yii\mail\MailerInterface');
             if ($mailer instanceof BaseMailer) {
                 $mailer->useFileTransport = false; // ensure mailer is not in test mode
             }
-            $mailer->compose()
+            return $mailer->compose()
                 ->setFrom($from)
                 ->setTo($email)
                 ->setSubject($subject)
@@ -595,7 +602,7 @@ class SelfUpdateController extends Controller
                 ->send();
         } catch (\Exception $exception) {
             $this->log($exception->getMessage());
-            $this->sendEmailFallback($from, $email, $subject, $message);
+            return $this->sendEmailFallback($from, $email, $subject, $message);
         }
     }
 
@@ -605,6 +612,7 @@ class SelfUpdateController extends Controller
      * @param string $email single email address
      * @param string $subject email subject
      * @param string $message email content
+     * @return boolean success.
      */
     protected function sendEmailFallback($from, $email, $subject, $message)
     {
@@ -625,6 +633,6 @@ class SelfUpdateController extends Controller
         }
         $headers[] = "Reply-To: {$from}";
 
-        mail($email, $subject, $message, implode("\n", $headers));
+        return mail($email, $subject, $message, implode("\n", $headers));
     }
 }

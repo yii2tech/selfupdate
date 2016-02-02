@@ -12,6 +12,8 @@ return [
     'emails' => [
         //'developer@domain.com',
     ],
+    // Mailer component to be used
+    'mailer' => 'mailer',
     // Mutex component to be used
     'mutex' => 'mutex',
     // path to project root directory (VCS root directory)

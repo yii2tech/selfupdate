@@ -82,7 +82,7 @@ class ShellResultTest extends TestCase
 
         $string = $shellResult->toString();
         $this->assertContains($shellResult->command, $string);
-        $this->assertContains($shellResult->exitCode, $string);
+        $this->assertContains((string)$shellResult->exitCode, $string);
         $this->assertContains($shellResult->outputLines[0], $string);
         $this->assertContains($shellResult->outputLines[1], $string);
 
