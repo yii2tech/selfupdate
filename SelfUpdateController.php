@@ -525,11 +525,11 @@ class SelfUpdateController extends Controller
 
         $output = $result->getOutput();
         if (!$result->isOk()) {
-            throw new Exception("Execution of '{$command}' failed: exit code = '{$result->exitCode}': \nOutput: \n{$output}");
+            throw new Exception("Execution of '{$result->command}' failed: exit code = '{$result->exitCode}': \nOutput: \n{$output}");
         }
         foreach ($this->shellResponseErrorKeywords as $errorKeyword) {
             if (stripos($output, $errorKeyword) !== false) {
-                throw new Exception("Execution of '{$command}' failed! \nOutput: \n{$output}");
+                throw new Exception("Execution of '{$result->command}' failed! \nOutput: \n{$output}");
             }
         }
         return $output;
