@@ -147,7 +147,7 @@ return [
 ];
 ```
 
-Please refer to [[yii2tech\selfupdate\SelfUpdateController]] for particular option information.
+Please refer to [[\yii2tech\selfupdate\SelfUpdateController]] for particular option information.
 
 Once you have made all necessary adjustments at configuration file, you can run 'self-update/perform' command with it:
 
@@ -155,8 +155,28 @@ Once you have made all necessary adjustments at configuration file, you can run 
 yii self-update @app/config/self-update.php
 ```
 
+You may setup default configuration file name inside the `controllerMap` specification via [[yii2tech\selfupdate\SelfUpdateController::configFile]]:
+
+```php
+return [
+    'controllerMap' => [
+        'self-update' => [
+            'class' => 'yii2tech\selfupdate\SelfUpdateController',
+            'configFile' => '@app/config/self-update.php',
+        ]
+    ],
+    // ...
+];
+```
+
+Then invocation of the self-update command will be much more clear:
+
+```
+yii self-update
+```
+
 > Note: it is not necessary to create a separated configuration file: you can configure all necessary fields of
-  `yii2tech\selfupdate\SelfUpdateController` inside `controllerMap` specification, but such approach is not recommended.
+  [[yii2tech\selfupdate\SelfUpdateController]] inside `controllerMap` specification, but such approach is not recommended.
 
 
 Self Update Workflow
