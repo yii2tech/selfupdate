@@ -37,6 +37,8 @@ use yii\mutex\Mutex;
  *
  *    yii self-update @app/config/selfupdate.php
  *
+ * @property string $hostName name of the host, which will be used in reports.
+ *
  * @author Paul Klimov <klimov.paul@gmail.com>
  * @since 1.0
  */
@@ -175,6 +177,10 @@ class SelfUpdateController extends Controller
      * @see log()
      */
     private $logLines = [];
+    /**
+     * @var string name of the host, which will be used in reports
+     */
+    private $_hostName;
 
 
     /**
@@ -452,15 +458,27 @@ class SelfUpdateController extends Controller
     }
 
     /**
+     * @param string $hostName server hostname.
+     */
+    public function setHostName($hostName)
+    {
+        $this->_hostName = $hostName;
+    }
+
+    /**
      * @return string server hostname.
      */
     public function getHostName()
     {
-        $hostName = @exec('hostname');
-        if (empty($hostName)) {
-            $hostName = Inflector::slug(Yii::$app->name) . '.com';
+        if ($this->_hostName === null) {
+            $hostName = @exec('hostname');
+            if (empty($hostName)) {
+                $this->_hostName = Inflector::slug(Yii::$app->name) . '.com';
+            } else {
+                $this->_hostName = $hostName;
+            }
         }
-        return $hostName;
+        return $this->_hostName;
     }
 
     /**
@@ -565,7 +583,7 @@ class SelfUpdateController extends Controller
             }
             $hostName = $this->getHostName();
             $from = $userName . '@' . $hostName;
-            $subject = $subjectPrefix . ': ' . $this->getHostName() . ' at ' . $this->getCurrentDate();
+            $subject = $subjectPrefix . ': ' . $hostName . ' at ' . $this->getCurrentDate();
             $message = implode("\n", $this->flushLog());
             foreach ($emails as $email) {
                 $this->sendEmail($from, $email, $subject, $message);
