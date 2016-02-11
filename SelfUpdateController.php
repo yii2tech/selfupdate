@@ -163,6 +163,12 @@ class SelfUpdateController extends Controller
      * If not set or sending email via this component fails, the fallback to the plain PHP `mail()` function will be used instead.
      */
     public $mailer;
+    /**
+     * @var string configuration file name. Settings from this file will be merged with the default ones.
+     * Such configuration file can be created, using action 'config'.
+     * Path alias can be used here, for example: '@app/config/self-update.php'.
+     */
+    public $configFile;
 
     /**
      * @var array list of log entries.
@@ -181,11 +187,15 @@ class SelfUpdateController extends Controller
      */
     public function actionPerform($configFile = null)
     {
+        if (empty($configFile)) {
+            $configFile = $this->configFile;
+        }
         if (!empty($configFile)) {
             $configFile = Yii::getAlias($configFile);
             if (!is_file($configFile)) {
                 throw new Exception("The configuration file does not exist: $configFile");
             }
+            $this->log("Reading configuration from: $configFile");
             Yii::configure($this, require $configFile);
         }
 
@@ -244,19 +254,19 @@ class SelfUpdateController extends Controller
      * how to customize it to fit for your needs. After customization,
      * you may use this configuration file with the "perform" command.
      *
-     * @param string $filePath output file name or alias.
+     * @param string $fileName output file name or alias.
      * @return integer CLI exit code
      */
-    public function actionConfig($filePath)
+    public function actionConfig($fileName)
     {
-        $filePath = Yii::getAlias($filePath);
-        if (file_exists($filePath)) {
-            if (!$this->confirm("File '{$filePath}' already exists. Do you wish to overwrite it?")) {
+        $fileName = Yii::getAlias($fileName);
+        if (file_exists($fileName)) {
+            if (!$this->confirm("File '{$fileName}' already exists. Do you wish to overwrite it?")) {
                 return self::EXIT_CODE_NORMAL;
             }
         }
-        copy(Yii::getAlias('@yii2tech/selfupdate/views/selfUpdateConfig.php'), $filePath);
-        $this->stdout("Configuration file template created at '{$filePath}' . \n\n", Console::FG_GREEN);
+        copy(Yii::getAlias('@yii2tech/selfupdate/views/selfUpdateConfig.php'), $fileName);
+        $this->stdout("Configuration file template created at '{$fileName}' . \n\n", Console::FG_GREEN);
         return self::EXIT_CODE_NORMAL;
     }
 
