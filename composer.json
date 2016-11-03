@@ -1,7 +1,7 @@
 {
     "name": "yii2tech/selfupdate",
     "description": "Basic extension for the Yii2 project self-update from VCS",
-    "keywords": ["yii2", "selfupdate", "update", "deployment", "continuous", "integration", "GIT", "Mercurial"],
+    "keywords": ["yii2", "selfupdate", "update", "deployment", "continuous", "integration", "VCS", "GIT", "Mercurial"],
     "type": "yii2-extension",
     "license": "BSD-3-Clause",
     "support": {

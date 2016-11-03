@@ -38,6 +38,7 @@ use yii\mutex\Mutex;
  *    yii self-update @app/config/selfupdate.php
  *
  * @property string $hostName name of the host, which will be used in reports.
+ * @property string $reportFrom email address, which should be used to send report email messages.
  *
  * @author Paul Klimov <klimov.paul@gmail.com>
  * @since 1.0
@@ -181,6 +182,10 @@ class SelfUpdateController extends Controller
      * @var string name of the host, which will be used in reports
      */
     private $_hostName;
+    /**
+     * @var string email address, which should be used to send report email messages.
+     */
+    private $_reportFrom;
 
 
     /**
@@ -482,6 +487,30 @@ class SelfUpdateController extends Controller
     }
 
     /**
+     * @return string email address, which should be used to send report email messages.
+     */
+    public function getReportFrom()
+    {
+        if ($this->_reportFrom === null) {
+            $userName = @exec('whoami');
+            if (empty($userName)) {
+                $userName = Inflector::slug(Yii::$app->name);
+            }
+            $hostName = $this->getHostName();
+            $this->_reportFrom = $userName . '@' . $hostName;
+        }
+        return $this->_reportFrom;
+    }
+
+    /**
+     * @param string $reportFrom email address, which should be used to send report email messages.
+     */
+    public function setReportFrom($reportFrom)
+    {
+        $this->_reportFrom = $reportFrom;
+    }
+
+    /**
      * @return string current date string.
      */
     public function getCurrentDate()
@@ -577,12 +606,8 @@ class SelfUpdateController extends Controller
     {
         $emails = $this->emails;
         if (!empty($emails)) {
-            $userName = @exec('whoami');
-            if (empty($userName)) {
-                $userName = Inflector::slug(Yii::$app->name);
-            }
             $hostName = $this->getHostName();
-            $from = $userName . '@' . $hostName;
+            $from = $this->getReportFrom();
             $subject = $subjectPrefix . ': ' . $hostName . ' at ' . $this->getCurrentDate();
             $message = implode("\n", $this->flushLog());
             foreach ($emails as $email) {

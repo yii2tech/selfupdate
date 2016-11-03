@@ -62,6 +62,30 @@ class SelfUpdateControllerTest extends TestCase
 
     // Tests :
 
+    public function testSetup()
+    {
+        $controller = $this->createController();
+
+        $hostName = 'some-host.com';
+        $controller->setHostName($hostName);
+        $this->assertEquals($hostName, $controller->getHostName());
+
+        $reportFrom = 'user@domain.com';
+        $controller->setReportFrom($reportFrom);
+        $this->assertEquals($reportFrom, $controller->getReportFrom());
+    }
+
+    /**
+     * @depends testSetup
+     */
+    public function testGetDefaults()
+    {
+        $controller = $this->createController();
+
+        $this->assertNotEmpty($controller->getHostName());
+        $this->assertNotEmpty($controller->getReportFrom());
+    }
+
     public function testActionConfig()
     {
         $testPath = $this->getTestFilePath();
@@ -157,6 +181,9 @@ class SelfUpdateControllerMock extends SelfUpdateController
      */
     private $stdOutBuffer = '';
 
+    /**
+     * @inheritdoc
+     */
     public function stdout($string)
     {
         $this->stdOutBuffer .= $string;

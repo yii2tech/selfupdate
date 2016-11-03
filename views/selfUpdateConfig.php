@@ -48,4 +48,7 @@ return [
     'composerRootPaths' => [
         '@app'
     ],*/
+    // adjust report settings, if necessary :
+    //'hostName' => 'myproject.com',
+    //'reportFrom' => 'root@myproject.com',
 ];
