@@ -142,7 +142,7 @@ return [
     ],
     // list of shell commands, which should be executed after project update
     'afterUpdateCommands' => [
-        "php {$_SERVER['SCRIPT_FILENAME']} migrate/up --interactive=0",
+        'php ' . escapeshellarg($_SERVER['SCRIPT_FILENAME']) . ' migrate/up --interactive=0',
     ],
 ];
 ```
