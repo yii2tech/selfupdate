@@ -20,7 +20,7 @@ interface VersionControlSystemInterface
      * Checks, if there are some changes in remote repository.
      * @param string $projectRoot VCS project root directory path.
      * @param string $log if parameter passed it will be filled with related log string.
-     * @return boolean whether there are changes in remote repository.
+     * @return bool whether there are changes in remote repository.
      */
     public function hasRemoteChanges($projectRoot, &$log = null);
 
@@ -28,7 +28,7 @@ interface VersionControlSystemInterface
      * Applies changes from remote repository.
      * @param string $projectRoot VCS project root directory path.
      * @param string $log if parameter passed it will be filled with related log string.
-     * @return boolean whether the changes have been applied successfully.
+     * @return bool whether the changes have been applied successfully.
      */
     public function applyRemoteChanges($projectRoot, &$log = null);
 }

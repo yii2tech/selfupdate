@@ -25,7 +25,7 @@ class ShellResult extends Object
      */
     public $command;
     /**
-     * @var integer shell command execution exit code
+     * @var int shell command execution exit code
      */
     public $exitCode;
     /**
@@ -44,7 +44,7 @@ class ShellResult extends Object
     }
 
     /**
-     * @return boolean whether exit code is OK.
+     * @return bool whether exit code is OK.
      */
     public function isOk()
     {
@@ -52,7 +52,7 @@ class ShellResult extends Object
     }
 
     /**
-     * @return boolean whether command execution produced empty output.
+     * @return bool whether command execution produced empty output.
      */
     public function isOutputEmpty()
     {
@@ -62,7 +62,7 @@ class ShellResult extends Object
     /**
      * Checks if output contains given string
      * @param string $string needle string.
-     * @return boolean whether output contains given string.
+     * @return bool whether output contains given string.
      */
     public function isOutputContains($string)
     {
@@ -72,7 +72,7 @@ class ShellResult extends Object
     /**
      * Checks if output matches give regular expression.
      * @param string $pattern regular expression
-     * @return boolean whether output matches given regular expression.
+     * @return bool whether output matches given regular expression.
      */
     public function isOutputMatches($pattern)
     {

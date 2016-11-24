@@ -194,7 +194,7 @@ class SelfUpdateController extends Controller
      * You may use the "config" command to generate
      * this file and then customize it for your needs.
      * @throws Exception on failure
-     * @return integer CLI exit code
+     * @return int CLI exit code
      */
     public function actionPerform($configFile = null)
     {
@@ -266,7 +266,7 @@ class SelfUpdateController extends Controller
      * you may use this configuration file with the "perform" command.
      *
      * @param string $fileName output file name or alias.
-     * @return integer CLI exit code
+     * @return int CLI exit code
      */
     public function actionConfig($fileName)
     {
@@ -283,7 +283,7 @@ class SelfUpdateController extends Controller
 
     /**
      * Acquires current action lock.
-     * @return boolean lock acquiring result.
+     * @return bool lock acquiring result.
      */
     protected function acquireMutex()
     {
@@ -293,7 +293,7 @@ class SelfUpdateController extends Controller
 
     /**
      * Release current action lock.
-     * @return boolean lock release result.
+     * @return bool lock release result.
      */
     protected function releaseMutex()
     {
@@ -622,7 +622,7 @@ class SelfUpdateController extends Controller
      * @param string $email single email address
      * @param string $subject email subject
      * @param string $message email content
-     * @return boolean success.
+     * @return bool success.
      */
     protected function sendEmail($from, $email, $subject, $message)
     {
@@ -654,7 +654,7 @@ class SelfUpdateController extends Controller
      * @param string $email single email address
      * @param string $subject email subject
      * @param string $message email content
-     * @return boolean success.
+     * @return bool success.
      */
     protected function sendEmailFallback($from, $email, $subject, $message)
     {
