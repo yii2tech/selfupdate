@@ -19,4 +19,61 @@ class ShellTest extends TestCase
         $result = Shell::execute('ls {dir}', ['{dir}' => __DIR__ . '/unexisting_dir']);
         $this->assertSame(2, $result->exitCode);
     }
+
+    /**
+     * Data provider for [[testBuildOptions()]]
+     * @return array test data.
+     */
+    public function dataProviderBuildOptions()
+    {
+        return [
+            [
+                [
+                    '--verbose',
+                    '--no-interactive'
+                ],
+                '--verbose --no-interactive'
+            ],
+            [
+                [
+                    '--verbose',
+                    '--username' => 'root'
+                ],
+                "--verbose --username='root'"
+            ],
+            [
+                [
+                    'verbose',
+                    'no-interactive'
+                ],
+                '--verbose --no-interactive'
+            ],
+            [
+                [
+                    '-v',
+                    'no-interactive'
+                ],
+                '-v --no-interactive'
+            ],
+            [
+                [
+                    'verbose',
+                    'username' => 'root'
+                ],
+                "--verbose --username='root'"
+            ],
+        ];
+    }
+
+    /**
+     * @dataProvider dataProviderBuildOptions
+     *
+     * @param array $options
+     * @param $expectedResult
+     */
+    public function testBuildOptions(array $options, $expectedResult)
+    {
+        $optionsString = Shell::buildOptions($options);
+        $this->assertEquals($expectedResult, $optionsString);
+    }
 }

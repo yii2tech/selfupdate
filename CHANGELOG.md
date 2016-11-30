@@ -1,6 +1,12 @@
 Yii 2 Project Self Update extension Change Log
 ==============================================
 
+1.0.2 under development
+-----------------------
+
+- Enh #5: Added `SelfUpdateController::$composerOptions` allowing setup of additional options for `composer install` command (klimov-paul)
+
+
 1.0.1, November 24, 2016
 ------------------------
 

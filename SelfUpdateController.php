@@ -148,6 +148,23 @@ class SelfUpdateController extends Controller
         ],
     ];
     /**
+     * @var array composer command options.
+     * @see Shell::buildOptions() for valid syntax on specifying this value.
+     * For example:
+     *
+     * ```php
+     * [
+     *     'prefer-dist',
+     *     'no-dev',
+     * ]
+     * ```
+     *
+     * Note, that `no-interaction` option will be added automatically to the options list.
+     *
+     * @since 1.0.2
+     */
+    public $composerOptions = [];
+    /**
      * @var string path to the 'composer' bin command.
      * By default simple 'composer' is used, assuming it available as global shell command.
      * Path alias can be used here. For example: '@app/composer.phar'.
@@ -438,8 +455,9 @@ class SelfUpdateController extends Controller
      */
     protected function updateVendor()
     {
+        $options = Shell::buildOptions(array_merge($this->composerOptions, ['no-interaction']));
         foreach ($this->composerRootPaths as $path) {
-            $this->execShellCommand('(cd {composerRoot}; {composer} install --no-interaction)', [
+            $this->execShellCommand('(cd {composerRoot}; {composer} install ' . $options . ')', [
                 '{composerRoot}' => Yii::getAlias($path),
                 '{composer}' => Yii::getAlias($this->composerBinPath),
             ]);
