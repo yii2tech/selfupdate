@@ -21,7 +21,7 @@ use yii\mutex\Mutex;
 
 /**
  * SelfUpdateController performs project update from VCS.
- * You can configure available version control systems via [[versionControlSystems]].
+ * You can configure available version control systems via [[$versionControlSystems]].
  *
  * Note: in order to work properly this command requires execution of VCS command without any prompt
  * or user input.
@@ -66,9 +66,11 @@ class SelfUpdateController extends Controller
     /**
      * @var array project web path stubs configuration.
      * Each path configuration should have following keys:
-     *  - 'path' - string - path to web root folder
-     *  - 'link' - string - path for the symbolic link, which should point to the web root
-     *  - 'stub' - string - path to folder, which contains stub for the web
+     *
+     * - 'path': string, path to web root folder
+     * - 'link': string, path for the symbolic link, which should point to the web root
+     * - 'stub': string, path to folder, which contains stub for the web
+     *
      * Yii aliases can be used for all these keys.
      * For example:
      *
@@ -136,8 +138,8 @@ class SelfUpdateController extends Controller
         'ошибка',
     ];
     /**
-     * @var array list of possible version control systems (VCS) in format: vcsFolderName => classConfig.
-     * VCS will be detected automatically based on which folder is available inside [[projectRootPath]]
+     * @var array list of possible version control systems (VCS) in format: `vcsFolderName => classConfig`.
+     * VCS will be detected automatically based on which folder is available inside [[$projectRootPath]]
      */
     public $versionControlSystems = [
         '.git' => [
@@ -179,7 +181,7 @@ class SelfUpdateController extends Controller
     ];
     /**
      * @var \yii\mail\MailerInterface|array|string the mailer object or the application component ID of the mailer.
-     * It will be used to send notification messages to [[emails]].
+     * It will be used to send notification messages to [[$emails]].
      * If not set or sending email via this component fails, the fallback to the plain PHP `mail()` function will be used instead.
      */
     public $mailer;
@@ -196,7 +198,7 @@ class SelfUpdateController extends Controller
      */
     private $logLines = [];
     /**
-     * @var string name of the host, which will be used in reports
+     * @var string name of the host, which will be used in reports.
      */
     private $_hostName;
     /**
@@ -355,7 +357,7 @@ class SelfUpdateController extends Controller
     }
 
     /**
-     * Normalizes [[webPaths]] value.
+     * Normalizes [[$webPaths]] value.
      * @throws InvalidConfigException on invalid configuration.
      */
     protected function normalizeWebPaths()
@@ -389,7 +391,7 @@ class SelfUpdateController extends Controller
     }
 
     /**
-     * Flushes cache for all components specified at [[cache]].
+     * Flushes cache for all components specified at [[$cache]].
      */
     protected function flushCache()
     {
@@ -403,7 +405,7 @@ class SelfUpdateController extends Controller
     }
 
     /**
-     * Clears all directories specified via [[tmpDirectories]].
+     * Clears all directories specified via [[$tmpDirectories]].
      */
     protected function clearTmpDirectories()
     {
@@ -431,7 +433,7 @@ class SelfUpdateController extends Controller
             '.gitignore',
             '.gitkeep',
             '.hgignore',
-            '.hgtkeep',
+            '.hgkeep',
         ];
         while (($file = readdir($handle)) !== false) {
             if ($file === '.' || $file === '..') {
@@ -451,7 +453,7 @@ class SelfUpdateController extends Controller
     }
 
     /**
-     * Performs vendors update via Composer at all [[composerRootPaths]].
+     * Performs vendors update via Composer at all [[$composerRootPaths]].
      */
     protected function updateVendor()
     {
@@ -579,7 +581,7 @@ class SelfUpdateController extends Controller
      * Executes shell command.
      * @param string $command command text.
      * @return string command output.
-     * @param array $placeholders placeholders to be replaced using `escapeshellarg()` in format: placeholder => value.
+     * @param array $placeholders placeholders to be replaced using `escapeshellarg()` in format: `placeholder => value`.
      * @throws Exception on failure.
      */
     protected function execShellCommand($command, array $placeholders = [])

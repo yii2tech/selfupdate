@@ -44,6 +44,7 @@ return [
         'php ' . escapeshellarg($_SERVER['SCRIPT_FILENAME']) . ' migrate/up --interactive=0',
     ],
     // adjust Composer settings, if necessary :
+    'composerOptions' => YII_ENV === 'dev' ? [] : ['no-dev'],
     /*'composerBinPath' => 'composer',
     'composerRootPaths' => [
         '@app'

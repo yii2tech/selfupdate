@@ -155,7 +155,7 @@ Once you have made all necessary adjustments at configuration file, you can run 
 yii self-update @app/config/self-update.php
 ```
 
-You may setup default configuration file name inside the `controllerMap` specification via [[yii2tech\selfupdate\SelfUpdateController::configFile]]:
+You may setup default configuration file name inside the `controllerMap` specification via [[yii2tech\selfupdate\SelfUpdateController::$configFile]]:
 
 ```php
 return [
@@ -183,6 +183,7 @@ Self Update Workflow
 --------------------
 
 While running, [[yii2tech\selfupdate\SelfUpdateController]] performs following steps:
+
  - check if there are any changes at VSC remote repository
  - link web server web directories to the stubs, while project update is running
  - apply remote VCS changes
