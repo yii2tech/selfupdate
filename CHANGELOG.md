@@ -1,6 +1,13 @@
 Yii 2 Project Self Update extension Change Log
 ==============================================
 
+1.0.3 under development
+-----------------------
+
+- Bug: Usage of deprecated `yii\base\Object` changed to `yii\base\BaseObject` allowing compatibility with PHP 7.2 (klimov-paul)
+- Enh: Usage of deprecated exit code constants of `yii\console\Controller` changed to `yii\console\ExitCode` ones (klimov-paul)
+
+
 1.0.2, December 8, 2016
 -----------------------
 

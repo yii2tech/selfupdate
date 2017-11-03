@@ -182,7 +182,7 @@ class SelfUpdateControllerMock extends SelfUpdateController
     private $stdOutBuffer = '';
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function stdout($string)
     {

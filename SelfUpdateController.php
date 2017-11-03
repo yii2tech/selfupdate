@@ -12,6 +12,7 @@ use yii\base\InvalidConfigException;
 use yii\caching\Cache;
 use yii\console\Controller;
 use Yii;
+use yii\console\ExitCode;
 use yii\di\Instance;
 use yii\helpers\Console;
 use yii\helpers\FileHelper;
@@ -231,7 +232,7 @@ class SelfUpdateController extends Controller
 
         if (!$this->acquireMutex()) {
             $this->stderr("Execution terminated: command is already running.\n", Console::FG_RED);
-            return self::EXIT_CODE_ERROR;
+            return ExitCode::UNSPECIFIED_ERROR;
         }
 
         try {
@@ -270,11 +271,11 @@ class SelfUpdateController extends Controller
             $this->reportFail();
 
             $this->releaseMutex();
-            return self::EXIT_CODE_ERROR;
+            return ExitCode::UNSPECIFIED_ERROR;
         }
 
         $this->releaseMutex();
-        return self::EXIT_CODE_NORMAL;
+        return ExitCode::OK;
     }
 
     /**
@@ -285,19 +286,19 @@ class SelfUpdateController extends Controller
      * you may use this configuration file with the "perform" command.
      *
      * @param string $fileName output file name or alias.
-     * @return int CLI exit code
+     * @return int CLI exit code.
      */
     public function actionConfig($fileName)
     {
         $fileName = Yii::getAlias($fileName);
         if (file_exists($fileName)) {
             if (!$this->confirm("File '{$fileName}' already exists. Do you wish to overwrite it?")) {
-                return self::EXIT_CODE_NORMAL;
+                return ExitCode::OK;
             }
         }
         copy(Yii::getAlias('@yii2tech/selfupdate/views/selfUpdateConfig.php'), $fileName);
         $this->stdout("Configuration file template created at '{$fileName}' . \n\n", Console::FG_GREEN);
-        return self::EXIT_CODE_NORMAL;
+        return ExitCode::OK;
     }
 
     /**
