@@ -9,7 +9,7 @@ namespace yii2tech\selfupdate;
 
 use yii\base\Exception;
 use yii\base\InvalidConfigException;
-use yii\caching\Cache;
+use yii\caching\CacheInterface;
 use yii\console\Controller;
 use Yii;
 use yii\console\ExitCode;
@@ -87,7 +87,7 @@ class SelfUpdateController extends Controller
      */
     public $webPaths = [];
     /**
-     * @var string|array list of cache application components, for which [[Cache::flush()]] method should be invoked.
+     * @var string|array list of cache application components, for which [[CacheInterface::clear()]] method should be invoked.
      * Component ids, instances or array configurations can be used here.
      */
     public $cache;
@@ -144,10 +144,10 @@ class SelfUpdateController extends Controller
      */
     public $versionControlSystems = [
         '.git' => [
-            'class' => 'yii2tech\selfupdate\Git'
+            '__class' => Git::class
         ],
         '.hg' => [
-            'class' => 'yii2tech\selfupdate\Mercurial'
+            '__class' => Mercurial::class
         ],
     ];
     /**
@@ -254,7 +254,7 @@ class SelfUpdateController extends Controller
                 $this->log($log);
 
                 $this->updateVendor();
-                $this->flushCache();
+                $this->clearCache();
                 $this->clearTmpDirectories();
 
                 $this->executeCommands($this->afterUpdateCommands);
@@ -307,7 +307,7 @@ class SelfUpdateController extends Controller
      */
     protected function acquireMutex()
     {
-        $this->mutex = Instance::ensure($this->mutex, Mutex::className());
+        $this->mutex = Instance::ensure($this->mutex, Mutex::class);
         return $this->mutex->acquire($this->composeMutexName());
     }
 
@@ -394,14 +394,14 @@ class SelfUpdateController extends Controller
     /**
      * Flushes cache for all components specified at [[$cache]].
      */
-    protected function flushCache()
+    protected function clearCache()
     {
         if (!empty($this->cache)) {
             foreach ((array)$this->cache as $cache) {
-                $cache = Instance::ensure($cache, Cache::className());
-                $cache->flush();
+                $cache = Instance::ensure($cache, CacheInterface::class);
+                $cache->clear();
             }
-            $this->log('Cache flushed.');
+            $this->log('Cache cleared.');
         }
     }
 

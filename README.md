@@ -65,7 +65,7 @@ configuration file:
 ```php
 return [
     'controllerMap' => [
-        'self-update' => 'yii2tech\selfupdate\SelfUpdateController'
+        'self-update' => yii2tech\selfupdate\SelfUpdateController::class
     ],
     // ...
 ];
@@ -166,7 +166,7 @@ You may setup default configuration file name inside the `controllerMap` specifi
 return [
     'controllerMap' => [
         'self-update' => [
-            'class' => 'yii2tech\selfupdate\SelfUpdateController',
+            '__class' => yii2tech\selfupdate\SelfUpdateController::class,
             'configFile' => '@app/config/self-update.php',
         ]
     ],
