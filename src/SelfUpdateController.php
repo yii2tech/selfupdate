@@ -326,7 +326,7 @@ class SelfUpdateController extends Controller
      */
     protected function composeMutexName()
     {
-        return $this->className() . '::' . $this->action->getUniqueId();
+        return get_class($this) . '::' . $this->action->getUniqueId();
     }
 
     /**

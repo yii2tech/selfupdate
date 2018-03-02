@@ -26,7 +26,7 @@
         }
     ],
     "autoload": {
-        "psr-4": { "yii2tech\\selfupdate\\": "" }
+        "psr-4": {"yii2tech\\selfupdate\\": "src"}
     },
     "extra": {
         "branch-alias": {
